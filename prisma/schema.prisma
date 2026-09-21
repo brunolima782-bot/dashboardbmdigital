@@ -1,15 +1,13 @@
 // Schema do banco de dados — Dashboard de Tráfego Pago
-// SQLite para desenvolvimento local. Estrutura compatível com migração para
-// PostgreSQL: basta trocar `provider` para "postgresql" e ajustar DATABASE_URL
-// (nesse caso os campos abaixo marcados como String "tipo enum" podem voltar
-// a ser enums nativos do Postgres, caso desejado).
+// PostgreSQL (necessário para funcionar em produção na Vercel, cujo sistema
+// de arquivos é temporário e não suporta um banco SQLite local persistente).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
