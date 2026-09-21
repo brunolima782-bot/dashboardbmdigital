@@ -1,0 +1,128 @@
+// Schema do banco de dados — Dashboard de Tráfego Pago
+// SQLite para desenvolvimento local. Estrutura compatível com migração para
+// PostgreSQL: basta trocar `provider` para "postgresql" e ajustar DATABASE_URL
+// (nesse caso os campos abaixo marcados como String "tipo enum" podem voltar
+// a ser enums nativos do Postgres, caso desejado).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Valores possíveis: "ADMIN" | "MANAGER" | "CLIENT"
+// Valores possíveis (Client.status): "ACTIVE" | "INACTIVE"
+// Valores possíveis (Investment/Campaign.platform): "META" | "GOOGLE" | "LINKEDIN"
+// SQLite não suporta enums nativos no Prisma; a validação desses valores é
+// feita na camada de API com zod (veja src/app/api/**/route.ts).
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  clientId     String?
+  client       Client?  @relation(fields: [clientId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clientId])
+}
+
+model AgencySettings {
+  id           String   @id @default(cuid())
+  agencyName   String   @default("Minha Agência")
+  logoUrl      String?
+  primaryColor String   @default("#4f46e5")
+  updatedAt    DateTime @updatedAt
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  companyName String
+  contactName String
+  email       String?
+  phone       String?
+  whatsapp    String?
+  city        String?
+  state       String?
+  segment     String?
+  logoUrl     String?
+  brandColor  String   @default("#4f46e5")
+  notes       String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  investments Investment[]
+  budgets     Budget[]
+  campaigns   Campaign[]
+
+  @@index([status])
+}
+
+model Campaign {
+  id          String       @id @default(cuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform    String
+  name        String
+  createdAt   DateTime     @default(now())
+  investments Investment[]
+
+  @@index([clientId])
+}
+
+model Investment {
+  id              String    @id @default(cuid())
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform        String
+  campaignId      String?
+  campaign        Campaign? @relation(fields: [campaignId], references: [id])
+  campaignName    String
+  date            DateTime
+  amount          Float
+  impressions     Int?      @default(0)
+  reach           Int?      @default(0)
+  clicks          Int?      @default(0)
+  leads           Int?      @default(0)
+  conversions     Int?      @default(0)
+  conversionValue Float?    @default(0)
+  notes           String?
+  isDemo          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([clientId, date])
+  @@index([platform])
+}
+
+model Budget {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  month    Int
+  year     Int
+  amount   Float
+
+  @@unique([clientId, month, year])
+  @@index([clientId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  clientId    String
+  periodStart DateTime
+  periodEnd   DateTime
+  platforms   String // JSON array serializado, ex: ["META","GOOGLE"]
+  generatedAt DateTime @default(now())
+  generatedBy String?
+
+  @@index([clientId])
+}

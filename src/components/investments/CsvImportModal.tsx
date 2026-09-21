@@ -1,0 +1,289 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Papa from "papaparse";
+import { X, Upload, Loader2, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/components/providers/ToastProvider";
+import type { ClientOption } from "./InvestmentFormModal";
+
+type ParsedRow = {
+  raw: Record<string, string>;
+  valid: boolean;
+  error?: string;
+  platform?: "META" | "GOOGLE" | "LINKEDIN";
+  date?: string;
+  campaignName?: string;
+  amount?: number;
+  impressions?: number;
+  clicks?: number;
+  leads?: number;
+  conversions?: number;
+};
+
+function normalizePlatform(value: string): "META" | "GOOGLE" | "LINKEDIN" | null {
+  const v = value.trim().toLowerCase();
+  if (v.includes("meta") || v.includes("facebook")) return "META";
+  if (v.includes("google")) return "GOOGLE";
+  if (v.includes("linkedin")) return "LINKEDIN";
+  return null;
+}
+
+function parseDate(value: string): string | null {
+  const v = value.trim();
+  // dd/mm/aaaa
+  const br = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  // aaaa-mm-dd
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return v;
+  return null;
+}
+
+function parseNumber(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const cleaned = value.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? undefined : n;
+}
+
+export default function CsvImportModal({
+  open,
+  onClose,
+  onImported,
+  clients,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onImported: () => void;
+  clients: ClientOption[];
+}) {
+  const { showToast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [clientId, setClientId] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [fileName, setFileName] = useState("");
+
+  function handleFile(file: File) {
+    setFileName(file.name);
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const parsed: ParsedRow[] = results.data.map((raw) => {
+          const dateRaw = raw["Data"] || raw["data"] || raw["Date"] || "";
+          const platformRaw = raw["Plataforma"] || raw["plataforma"] || raw["Platform"] || "";
+          const campaignRaw = raw["Campanha"] || raw["campanha"] || raw["Campaign"] || "";
+          const amountRaw = raw["Investimento"] || raw["investimento"] || raw["Amount"] || "";
+
+          const date = parseDate(dateRaw);
+          const platform = normalizePlatform(platformRaw);
+          const amount = parseNumber(amountRaw);
+
+          let error: string | undefined;
+          if (!date) error = "Data inválida (use DD/MM/AAAA)";
+          else if (!platform) error = "Plataforma inválida (Meta Ads, Google Ads ou LinkedIn Ads)";
+          else if (!campaignRaw.trim()) error = "Campanha não informada";
+          else if (amount === undefined || amount < 0) error = "Investimento inválido";
+
+          return {
+            raw,
+            valid: !error,
+            error,
+            date: date || undefined,
+            platform: platform || undefined,
+            campaignName: campaignRaw.trim(),
+            amount,
+            impressions: parseNumber(raw["Impressões"] || raw["Impressoes"]),
+            clicks: parseNumber(raw["Cliques"]),
+            leads: parseNumber(raw["Leads"]),
+            conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
+          };
+        });
+        setRows(parsed);
+      },
+      error: () => {
+        showToast("Não foi possível ler o arquivo CSV", "error");
+      },
+    });
+  }
+
+  async function handleImport() {
+    if (!clientId) {
+      showToast("Selecione o cliente para importar os dados", "error");
+      return;
+    }
+    const validRows = rows.filter((r) => r.valid);
+    if (validRows.length === 0) {
+      showToast("Nenhuma linha válida para importar", "error");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const res = await fetch("/api/investments/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rows: validRows.map((r) => ({
+            clientId,
+            platform: r.platform,
+            campaignName: r.campaignName,
+            date: r.date,
+            amount: r.amount,
+            impressions: r.impressions,
+            clicks: r.clicks,
+            leads: r.leads,
+            conversions: r.conversions,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || "Erro ao importar arquivo", "error");
+        return;
+      }
+      showToast(`${data.imported} investimento(s) importado(s) com sucesso!`, "success");
+      setRows([]);
+      setFileName("");
+      onImported();
+    } catch {
+      showToast("Erro de conexão ao importar", "error");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleClose() {
+    setRows([]);
+    setFileName("");
+    setClientId("");
+    onClose();
+  }
+
+  if (!open) return null;
+
+  const validCount = rows.filter((r) => r.valid).length;
+  const invalidCount = rows.length - validCount;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/50 animate-fade-in" onClick={handleClose} />
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 shadow-xl animate-fade-in">
+        <div className="sticky top-0 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-4">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">Importar investimentos via CSV</h3>
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          <div>
+            <label className="label">Cliente de destino *</label>
+            <select className="input" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="">Selecione o cliente</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.companyName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              Colunas esperadas: <strong>Data</strong> (DD/MM/AAAA), <strong>Plataforma</strong>, <strong>Campanha</strong>,{" "}
+              <strong>Investimento</strong>, e opcionalmente Impressões, Cliques, Leads, Conversões.
+            </p>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="w-full rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 py-8 flex flex-col items-center gap-2 text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-colors"
+            >
+              <Upload className="h-6 w-6" />
+              <span className="text-sm font-medium">{fileName || "Clique para selecionar o arquivo CSV"}</span>
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+                e.target.value = "";
+              }}
+            />
+          </div>
+
+          {rows.length > 0 && (
+            <div>
+              <div className="flex items-center gap-4 mb-3 text-sm">
+                <span className="flex items-center gap-1.5 text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> {validCount} válida(s)
+                </span>
+                {invalidCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-red-600">
+                    <AlertCircle className="h-4 w-4" /> {invalidCount} com erro
+                  </span>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 sticky top-0">
+                    <tr className="text-left text-slate-500">
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Data</th>
+                      <th className="px-3 py-2 font-medium">Plataforma</th>
+                      <th className="px-3 py-2 font-medium">Campanha</th>
+                      <th className="px-3 py-2 font-medium text-right">Investimento</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {rows.slice(0, 50).map((r, idx) => (
+                      <tr key={idx} className={r.valid ? "" : "bg-red-50/50 dark:bg-red-950/20"}>
+                        <td className="px-3 py-2">
+                          {r.valid ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                          ) : (
+                            <span title={r.error} className="text-red-500 flex items-center gap-1">
+                              <AlertCircle className="h-3.5 w-3.5" />
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">{r.date || r.raw["Data"] || "-"}</td>
+                        <td className="px-3 py-2">{r.platform || r.raw["Plataforma"] || "-"}</td>
+                        <td className="px-3 py-2">{r.campaignName || "-"}</td>
+                        <td className="px-3 py-2 text-right">{r.amount ?? "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {invalidCount > 0 && (
+                <p className="mt-2 text-xs text-slate-400 flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> Linhas com erro serão ignoradas na importação.
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" className="btn-secondary" onClick={handleClose}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleImport}
+              disabled={importing || validCount === 0}
+            >
+              {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {importing ? "Importando..." : `Importar ${validCount} registro(s)`}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
