@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import SettingsForm from "@/components/settings/SettingsForm";
+import ChangePasswordForm from "@/components/settings/ChangePasswordForm";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function SettingsPage() {
         initialLogoUrl={settings.logoUrl || ""}
         initialPrimaryColor={settings.primaryColor}
       />
+      <ChangePasswordForm />
     </div>
   );
 }
