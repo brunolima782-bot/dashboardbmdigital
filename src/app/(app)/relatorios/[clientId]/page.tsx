@@ -12,6 +12,7 @@ import TrendLineChart from "@/components/charts/TrendLineChart";
 import PlatformComparisonTable from "@/components/clients/PlatformComparisonTable";
 import PlatformPerformanceCard from "@/components/reports/PlatformPerformanceCard";
 import ExportPdfButton from "@/components/reports/ExportPdfButton";
+import RoiHighlight from "@/components/reports/RoiHighlight";
 import Badge from "@/components/ui/Badge";
 
 export const dynamic = "force-dynamic";
@@ -117,6 +118,8 @@ export default async function ReportPage({
             ))}
           </div>
         </section>
+
+        <RoiHighlight investment={totals.investment} returnValue={totals.conversionValue} />
 
         {/* Resumo executivo */}
         <section>
