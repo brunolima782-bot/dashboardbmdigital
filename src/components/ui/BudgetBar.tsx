@@ -31,7 +31,8 @@ export default function BudgetBar({
   const over = usage > 100;
 
   async function handleSave() {
-    const amount = parseFloat(value.replace(",", "."));
+    const cleaned = value.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+    const amount = parseFloat(cleaned);
     if (isNaN(amount) || amount < 0) {
       showToast("Informe um valor de orçamento válido", "error");
       return;
@@ -78,8 +79,8 @@ export default function BudgetBar({
       {editing ? (
         <div className="flex items-center gap-2 mb-3">
           <input
-            type="number"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             className="input"
             value={value}
             onChange={(e) => setValue(e.target.value)}

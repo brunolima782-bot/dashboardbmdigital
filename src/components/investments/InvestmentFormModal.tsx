@@ -6,6 +6,17 @@ import { useToast } from "@/components/providers/ToastProvider";
 
 export type ClientOption = { id: string; companyName: string };
 
+function parseBRNumber(value: string): number {
+  const cleaned = value.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatBRNumber(value: number | undefined): string {
+  if (!value) return "";
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export type InvestmentRecord = {
   id?: string;
   clientId: string;
@@ -54,18 +65,21 @@ export default function InvestmentFormModal({
 }) {
   const { showToast } = useToast();
   const [data, setData] = useState<InvestmentRecord>(EMPTY);
+  const [amountText, setAmountText] = useState("");
+  const [conversionValueText, setConversionValueText] = useState("");
   const [saving, setSaving] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
   const isEdit = Boolean(initialData?.id);
 
   useEffect(() => {
     if (open) {
-      setData(
-        initialData || {
-          ...EMPTY,
-          clientId: defaultClientId || "",
-        }
-      );
+      const next = initialData || {
+        ...EMPTY,
+        clientId: defaultClientId || "",
+      };
+      setData(next);
+      setAmountText(formatBRNumber(next.amount));
+      setConversionValueText(formatBRNumber(next.conversionValue));
       setShowMetrics(Boolean(initialData));
     }
   }, [open, initialData, defaultClientId]);
@@ -178,12 +192,14 @@ export default function InvestmentFormModal({
           <div>
             <label className="label">Valor investido (R$) *</label>
             <input
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
               className="input"
-              value={data.amount || ""}
-              onChange={(e) => update("amount", parseFloat(e.target.value) || 0)}
+              value={amountText}
+              onChange={(e) => {
+                setAmountText(e.target.value);
+                update("amount", parseBRNumber(e.target.value));
+              }}
               placeholder="0,00"
             />
           </div>
@@ -261,12 +277,15 @@ export default function InvestmentFormModal({
               <div>
                 <label className="label">Valor de conversão (R$)</label>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   className="input"
-                  value={data.conversionValue ?? ""}
-                  onChange={(e) => update("conversionValue", e.target.value ? parseFloat(e.target.value) : undefined)}
+                  value={conversionValueText}
+                  onChange={(e) => {
+                    setConversionValueText(e.target.value);
+                    update("conversionValue", e.target.value ? parseBRNumber(e.target.value) : undefined);
+                  }}
+                  placeholder="0,00"
                 />
               </div>
             </div>
