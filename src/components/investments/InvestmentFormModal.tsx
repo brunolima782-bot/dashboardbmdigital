@@ -17,6 +17,17 @@ function formatBRNumber(value: number | undefined): string {
   return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function parseBRInt(value: string): number {
+  const cleaned = value.replace(/\./g, "").replace(/[^\d-]/g, "");
+  const n = parseInt(cleaned, 10);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatBRInt(value: number | undefined): string {
+  if (!value) return "";
+  return value.toLocaleString("pt-BR");
+}
+
 export type InvestmentRecord = {
   id?: string;
   clientId: string;
@@ -67,6 +78,11 @@ export default function InvestmentFormModal({
   const [data, setData] = useState<InvestmentRecord>(EMPTY);
   const [amountText, setAmountText] = useState("");
   const [conversionValueText, setConversionValueText] = useState("");
+  const [impressionsText, setImpressionsText] = useState("");
+  const [reachText, setReachText] = useState("");
+  const [clicksText, setClicksText] = useState("");
+  const [leadsText, setLeadsText] = useState("");
+  const [conversionsText, setConversionsText] = useState("");
   const [saving, setSaving] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
   const isEdit = Boolean(initialData?.id);
@@ -80,6 +96,11 @@ export default function InvestmentFormModal({
       setData(next);
       setAmountText(formatBRNumber(next.amount));
       setConversionValueText(formatBRNumber(next.conversionValue));
+      setImpressionsText(formatBRInt(next.impressions));
+      setReachText(formatBRInt(next.reach));
+      setClicksText(formatBRInt(next.clicks));
+      setLeadsText(formatBRInt(next.leads));
+      setConversionsText(formatBRInt(next.conversions));
       setShowMetrics(Boolean(initialData));
     }
   }, [open, initialData, defaultClientId]);
@@ -227,51 +248,66 @@ export default function InvestmentFormModal({
               <div>
                 <label className="label">Impressões</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
-                  value={data.impressions ?? ""}
-                  onChange={(e) => update("impressions", e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={impressionsText}
+                  onChange={(e) => {
+                    setImpressionsText(e.target.value);
+                    update("impressions", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
               <div>
                 <label className="label">Alcance</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
-                  value={data.reach ?? ""}
-                  onChange={(e) => update("reach", e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={reachText}
+                  onChange={(e) => {
+                    setReachText(e.target.value);
+                    update("reach", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
               <div>
                 <label className="label">Cliques</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
-                  value={data.clicks ?? ""}
-                  onChange={(e) => update("clicks", e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={clicksText}
+                  onChange={(e) => {
+                    setClicksText(e.target.value);
+                    update("clicks", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
               <div>
                 <label className="label">Leads</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
-                  value={data.leads ?? ""}
-                  onChange={(e) => update("leads", e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={leadsText}
+                  onChange={(e) => {
+                    setLeadsText(e.target.value);
+                    update("leads", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
               <div>
                 <label className="label">Conversões</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className="input"
-                  value={data.conversions ?? ""}
-                  onChange={(e) => update("conversions", e.target.value ? parseInt(e.target.value) : undefined)}
+                  value={conversionsText}
+                  onChange={(e) => {
+                    setConversionsText(e.target.value);
+                    update("conversions", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
               <div>

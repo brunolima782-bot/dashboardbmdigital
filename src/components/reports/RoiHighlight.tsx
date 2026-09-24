@@ -62,6 +62,11 @@ export default function RoiHighlight({
           ? `Lucro de ${formatCurrency(profit)} acima do valor investido`
           : `Ainda ${formatCurrency(Math.abs(profit))} abaixo do valor investido`}
       </div>
+
+      <p className="mt-4 text-center text-sm text-slate-600 dark:text-slate-300">
+        O retorno total gerado nesse período foi de{" "}
+        <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(returnValue)}</span>.
+      </p>
     </section>
   );
 }
