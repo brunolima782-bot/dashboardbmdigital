@@ -6,8 +6,8 @@ import { Lock, Mail, Loader2, TrendingUp } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@agencia.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -147,12 +147,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-500 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400">
-            <p className="font-medium text-slate-600 dark:text-slate-300 mb-1">Usuário de demonstração</p>
-            <p>E-mail: admin@agencia.com</p>
-            <p>Senha: admin123</p>
-          </div>
         </div>
       </div>
     </div>

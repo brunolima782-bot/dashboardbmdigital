@@ -37,3 +37,6 @@ next-env.d.ts
 /arquivo csv/
 /logomarca/
 /WhatsApp Image*.jpeg
+
+.vercel
+.env*
