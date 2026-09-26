@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import crypto from "crypto";
 
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml"];
@@ -26,17 +25,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Arquivo muito grande. Máximo de 3MB." }, { status: 400 });
     }
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
     const ext = file.name.split(".").pop() || "png";
     const fileName = `${crypto.randomUUID()}.${ext}`;
-    const filePath = path.join(uploadsDir, fileName);
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
+    const blob = await put(fileName, file, {
+      access: "public",
+      addRandomSuffix: false,
+    });
 
-    return NextResponse.json({ url: `/uploads/${fileName}` }, { status: 201 });
+    return NextResponse.json({ url: blob.url }, { status: 201 });
   } catch (error) {
     console.error("Erro ao enviar arquivo:", error);
     return NextResponse.json({ error: "Erro ao enviar arquivo" }, { status: 500 });
