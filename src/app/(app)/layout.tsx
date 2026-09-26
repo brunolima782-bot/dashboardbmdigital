@@ -14,13 +14,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const agencyName = settings?.agencyName || "Minha Agência";
   const logoUrl = settings?.logoUrl;
 
+  const isClient = session.role === "CLIENT";
+
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-surface-dark">
       <aside className="hidden lg:block w-72 flex-shrink-0">
-        <Sidebar agencyName={agencyName} logoUrl={logoUrl} />
+        <Sidebar agencyName={agencyName} logoUrl={logoUrl} isClient={isClient} clientId={session.clientId} />
       </aside>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Topbar agencyName={agencyName} logoUrl={logoUrl} userName={session.name} />
+        <Topbar
+          agencyName={agencyName}
+          logoUrl={logoUrl}
+          userName={session.name}
+          isClient={isClient}
+          clientId={session.clientId}
+        />
         <main className="flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">{children}</main>
       </div>
     </div>

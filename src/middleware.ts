@@ -23,23 +23,38 @@ export async function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  let isValid = false;
+  let payload: { role?: string; clientId?: string } | null = null;
 
   if (token) {
     try {
-      await jwtVerify(token, getSecretKey());
-      isValid = true;
+      const result = await jwtVerify(token, getSecretKey());
+      payload = result.payload as { role?: string; clientId?: string };
     } catch {
-      isValid = false;
+      payload = null;
     }
   }
 
-  if (!isValid) {
+  if (!payload) {
     if (pathname.startsWith("/api")) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Clientes (portal do cliente) só podem ver o próprio relatório — nunca as
+  // telas de gestão da agência nem os dados de outros clientes.
+  if (payload.role === "CLIENT") {
+    const clientHome = `/relatorios/${payload.clientId}`;
+    const allowedApiPaths = ["/api/auth/logout", "/api/auth/password"];
+
+    if (pathname.startsWith("/api")) {
+      if (!allowedApiPaths.includes(pathname)) {
+        return NextResponse.json({ error: "Acesso não permitido" }, { status: 403 });
+      }
+    } else if (pathname !== clientHome) {
+      return NextResponse.redirect(new URL(clientHome, request.url));
+    }
   }
 
   return NextResponse.next();

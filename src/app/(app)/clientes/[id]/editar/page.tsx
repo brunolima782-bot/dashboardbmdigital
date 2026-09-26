@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import ClientForm from "@/components/clients/ClientForm";
+import ClientPortalAccess from "@/components/clients/ClientPortalAccess";
 
 export default async function EditClientPage({ params }: { params: { id: string } }) {
   const client = await prisma.client.findUnique({ where: { id: params.id } });
@@ -37,6 +38,7 @@ export default async function EditClientPage({ params }: { params: { id: string 
           status: client.status as "ACTIVE" | "INACTIVE",
         }}
       />
+      <ClientPortalAccess clientId={client.id} suggestedEmail={client.email || ""} />
     </div>
   );
 }

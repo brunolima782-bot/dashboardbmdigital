@@ -29,13 +29,20 @@ export default function Sidebar({
   agencyName,
   logoUrl,
   onNavigate,
+  isClient,
+  clientId,
 }: {
   agencyName: string;
   logoUrl?: string | null;
   onNavigate?: () => void;
+  isClient?: boolean;
+  clientId?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const navItems = isClient
+    ? [{ href: `/relatorios/${clientId}`, label: "Meu Relatório", icon: FileBarChart }]
+    : NAV_ITEMS;
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -60,7 +67,7 @@ export default function Sidebar({
         )}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{agencyName}</p>
-          <p className="text-xs text-slate-400">Painel de gestão</p>
+          <p className="text-xs text-slate-400">{isClient ? "Portal do cliente" : "Painel de gestão"}</p>
         </div>
         <button
           className="ml-auto lg:hidden text-slate-400 hover:text-slate-600"
@@ -72,7 +79,7 @@ export default function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
           return (

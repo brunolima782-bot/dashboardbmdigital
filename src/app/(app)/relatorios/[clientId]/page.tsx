@@ -6,6 +6,7 @@ import { resolvePeriod, PeriodPreset } from "@/lib/period";
 import { aggregateMetrics, PLATFORM_LABELS } from "@/lib/metrics";
 import { formatCurrency, formatNumber, formatPercent, formatDateLong } from "@/lib/formatters";
 import { generateInsights, generateRecommendations, generateExecutiveSummary } from "@/lib/insights";
+import { getSession } from "@/lib/auth";
 import ChartCard from "@/components/charts/ChartCard";
 import PlatformPieChart from "@/components/charts/PlatformPieChart";
 import TrendLineChart from "@/components/charts/TrendLineChart";
@@ -30,6 +31,10 @@ export default async function ReportPage({
 }) {
   const client = await prisma.client.findUnique({ where: { id: params.clientId } });
   if (!client) notFound();
+
+  const session = await getSession();
+  const isClientUser = session?.role === "CLIENT";
+  if (isClientUser && session?.clientId !== params.clientId) notFound();
 
   const settings = await prisma.agencySettings.findFirst();
   const agencyName = settings?.agencyName || "Minha Agência";
@@ -78,9 +83,13 @@ export default async function ReportPage({
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-pdf-hide>
-        <Link href="/relatorios" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar para relatórios
-        </Link>
+        {isClientUser ? (
+          <div />
+        ) : (
+          <Link href="/relatorios" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar para relatórios
+          </Link>
+        )}
         <ExportPdfButton
           elementId="report-content"
           fileName={fileName}

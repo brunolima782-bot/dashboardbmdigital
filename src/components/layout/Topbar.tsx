@@ -8,10 +8,14 @@ export default function Topbar({
   agencyName,
   logoUrl,
   userName,
+  isClient,
+  clientId,
 }: {
   agencyName: string;
   logoUrl?: string | null;
   userName: string;
+  isClient?: boolean;
+  clientId?: string | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -28,7 +32,7 @@ export default function Topbar({
 
         <div className="min-w-0">
           <h1 className="text-sm font-semibold text-slate-900 dark:text-white sm:text-base">
-            Dashboard de Tráfego Pago
+            {isClient ? "Portal do Cliente" : "Dashboard de Tráfego Pago"}
           </h1>
           <p className="text-xs text-slate-400">{agencyName}</p>
         </div>
@@ -36,7 +40,7 @@ export default function Topbar({
         <div className="ml-auto flex items-center gap-3">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{userName}</span>
-            <span className="text-xs text-slate-400">Administrador</span>
+            <span className="text-xs text-slate-400">{isClient ? "Cliente" : "Administrador"}</span>
           </div>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
             <User className="h-4.5 w-4.5" />
@@ -48,7 +52,13 @@ export default function Topbar({
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-72 animate-fade-in">
-            <Sidebar agencyName={agencyName} logoUrl={logoUrl} onNavigate={() => setOpen(false)} />
+            <Sidebar
+              agencyName={agencyName}
+              logoUrl={logoUrl}
+              onNavigate={() => setOpen(false)}
+              isClient={isClient}
+              clientId={clientId}
+            />
           </div>
         </div>
       )}
