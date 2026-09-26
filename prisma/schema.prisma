@@ -56,12 +56,50 @@ model Client {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  users       User[]
-  investments Investment[]
-  budgets     Budget[]
-  campaigns   Campaign[]
+  users           User[]
+  investments     Investment[]
+  budgets         Budget[]
+  campaigns       Campaign[]
+  businessProfile BusinessProfile?
 
   @@index([status])
+}
+
+// Diagnóstico do perfil do Google Meu Negócio do cliente + concorrentes,
+// usado para gerar a análise de pontos fortes/fracos e estratégia de tráfego.
+model BusinessProfile {
+  id                String   @id @default(cuid())
+  clientId          String   @unique
+  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessName      String
+  category          String
+  isB2B             Boolean  @default(false)
+  rating            Float    @default(0)
+  reviewCount       Int      @default(0)
+  photoCount        Int      @default(0)
+  hasWebsite        Boolean  @default(false)
+  hasWhatsapp       Boolean  @default(false)
+  completeHours     Boolean  @default(false)
+  hasDescription    Boolean  @default(false)
+  respondsToReviews Boolean  @default(false)
+  recentPosts       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  competitors Competitor[]
+}
+
+model Competitor {
+  id                String          @id @default(cuid())
+  businessProfileId String
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  name              String
+  rating            Float           @default(0)
+  reviewCount       Int             @default(0)
+  photoCount        Int             @default(0)
+  createdAt         DateTime        @default(now())
+
+  @@index([businessProfileId])
 }
 
 model Campaign {
