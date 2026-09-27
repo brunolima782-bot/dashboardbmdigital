@@ -57,15 +57,16 @@ export default function LoginPage() {
             Tráfego · Estratégia · Resultados
           </p>
           <h1 className="text-4xl font-bold leading-tight">
-            Gestão profissional de tráfego pago para sua agência.
+            Gestão profissional de tráfego pago para sua empresa.
           </h1>
           <p className="text-brand-100 text-lg leading-relaxed">
-            Centralize investimentos em Meta Ads, Google Ads e LinkedIn Ads, acompanhe métricas em
-            tempo real e gere relatórios profissionais para seus clientes.
+            A BM Digital cuida do seu tráfego pago em Meta Ads, Google Ads e LinkedIn Ads — aqui você
+            acompanha o investimento e os resultados das suas campanhas em tempo real, com total
+            transparência.
           </p>
           <div className="flex items-center gap-2 text-brand-100">
             <TrendingUp className="h-5 w-5" />
-            <span className="text-sm">Dashboards, relatórios em PDF e muito mais.</span>
+            <span className="text-sm">Seus relatórios sempre atualizados, a um clique de distância.</span>
           </div>
         </div>
 
