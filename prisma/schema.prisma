@@ -32,11 +32,43 @@ model User {
 }
 
 model AgencySettings {
-  id           String   @id @default(cuid())
-  agencyName   String   @default("Minha Agência")
-  logoUrl      String?
-  primaryColor String   @default("#4f46e5")
-  updatedAt    DateTime @updatedAt
+  id               String   @id @default(cuid())
+  agencyName       String   @default("Minha Agência")
+  logoUrl          String?
+  primaryColor     String   @default("#4f46e5")
+  // Painel financeiro: % sugerida do lucro líquido a manter reservada na
+  // empresa (o restante é o pró-labore saudável sugerido), e a meta de
+  // clientes/ticket usada para acompanhar o crescimento da receita recorrente.
+  reservePercent   Float    @default(30)
+  clientGoalCount  Int      @default(5)
+  clientGoalTicket Float    @default(1500)
+  updatedAt        DateTime @updatedAt
+}
+
+// Valores recebidos dos clientes pela prestação de serviço (mensalidade da
+// agência) — não confundir com Investment, que é a verba de mídia do cliente.
+model AgencyRevenue {
+  id          String   @id @default(cuid())
+  clientId    String?
+  client      Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  description String?
+  amount      Float
+  date        DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([date])
+}
+
+// Despesas da própria agência (ferramentas, aluguel, energia, etc.)
+model AgencyExpense {
+  id          String   @id @default(cuid())
+  category    String
+  description String?
+  amount      Float
+  date        DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([date])
 }
 
 model Client {
@@ -61,6 +93,7 @@ model Client {
   budgets         Budget[]
   campaigns       Campaign[]
   businessProfile BusinessProfile?
+  revenues        AgencyRevenue[]
 
   @@index([status])
 }

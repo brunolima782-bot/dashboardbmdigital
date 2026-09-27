@@ -11,6 +11,7 @@ import {
   LogOut,
   BarChart3,
   Search,
+  Landmark,
   X,
 } from "lucide-react";
 import clsx from "clsx";
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/investimentos", label: "Investimentos", icon: Wallet },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/analise-negocio", label: "Análise de Negócio", icon: Search },
+  { href: "/financeiro", label: "Financeiro", icon: Landmark },
   { href: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

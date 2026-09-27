@@ -6,6 +6,9 @@ const schema = z.object({
   agencyName: z.string().min(2, "Informe o nome da agência"),
   logoUrl: z.string().optional(),
   primaryColor: z.string().optional(),
+  reservePercent: z.number().min(0).max(100).optional(),
+  clientGoalCount: z.number().int().positive().optional(),
+  clientGoalTicket: z.number().nonnegative().optional(),
 });
 
 export async function GET() {
