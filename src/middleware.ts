@@ -16,6 +16,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/uploads") ||
+    pathname.startsWith("/brand") ||
     pathname === "/favicon.ico" ||
     pathname.startsWith("/icon.")
   ) {
@@ -61,5 +62,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon\\.|uploads).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon\\.|uploads|brand).*)"],
 };
