@@ -3,6 +3,15 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Loader2, TrendingUp } from "lucide-react";
+import { SiMeta, SiGoogleads } from "react-icons/si";
+import { FaLinkedin } from "react-icons/fa6";
+import { PLATFORM_COLORS } from "@/lib/metrics";
+
+const PLATFORMS = [
+  { Icon: SiMeta, label: "Meta Ads", color: PLATFORM_COLORS.META, hoverClass: "hover:-translate-y-1.5 hover:-rotate-6" },
+  { Icon: SiGoogleads, label: "Google Ads", color: PLATFORM_COLORS.GOOGLE, hoverClass: "hover:-translate-y-1.5" },
+  { Icon: FaLinkedin, label: "LinkedIn Ads", color: PLATFORM_COLORS.LINKEDIN, hoverClass: "hover:-translate-y-1.5 hover:rotate-6" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -148,6 +157,24 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div>
+            <p className="text-center text-xs text-slate-400 mb-4">Gerenciamos suas campanhas em</p>
+            <div className="flex items-center justify-center gap-8">
+              {PLATFORMS.map(({ Icon, label, color, hoverClass }) => (
+                <div
+                  key={label}
+                  className={`group flex flex-col items-center gap-1.5 transition-transform duration-300 ease-out cursor-default ${hoverClass}`}
+                >
+                  <Icon
+                    className="h-7 w-7 transition-transform duration-300 group-hover:scale-110"
+                    style={{ color }}
+                  />
+                  <span className="text-[11px] font-medium text-slate-400">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
