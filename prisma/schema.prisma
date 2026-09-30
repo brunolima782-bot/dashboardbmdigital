@@ -94,8 +94,25 @@ model Client {
   campaigns       Campaign[]
   businessProfile BusinessProfile?
   revenues        AgencyRevenue[]
+  profileChecklist ProfileChecklist?
 
   @@index([status])
+}
+
+// Checklist de otimização do perfil do Google Meu Negócio (33 itens, pesos
+// somando 100 pontos) — distinto do BusinessProfile (que compara com
+// concorrentes). As respostas ficam salvas como JSON: { [itemId]: "TEM" |
+// "NAO_TEM" | "NAO_SE_APLICA" }.
+model ProfileChecklist {
+  id               String   @id @default(cuid())
+  clientId         String   @unique
+  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  companyName      String?
+  cityNeighborhood String?
+  evaluatedBy      String?
+  answers          Json     @default("{}")
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
 }
 
 // Diagnóstico do perfil do Google Meu Negócio do cliente + concorrentes,

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import BusinessAnalysisClient from "@/components/business/BusinessAnalysisClient";
+import AnaliseNegocioTabs from "@/components/business/AnaliseNegocioTabs";
+import type { ChecklistAnswer } from "@/lib/profileChecklist";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +12,15 @@ export default async function BusinessAnalysisPage({ params }: { params: { clien
   const settings = await prisma.agencySettings.findFirst();
   const agencyName = settings?.agencyName || "Minha Agência";
 
-  const profile = await prisma.businessProfile.findUnique({
-    where: { clientId: params.clientId },
-    include: { competitors: true },
-  });
+  const [profile, checklist] = await Promise.all([
+    prisma.businessProfile.findUnique({
+      where: { clientId: params.clientId },
+      include: { competitors: true },
+    }),
+    prisma.profileChecklist.findUnique({ where: { clientId: params.clientId } }),
+  ]);
 
-  const initialData = profile
+  const businessAnalysisData = profile
     ? {
         profile: {
           businessName: profile.businessName,
@@ -41,12 +45,20 @@ export default async function BusinessAnalysisPage({ params }: { params: { clien
       }
     : null;
 
+  const checklistData = {
+    companyName: checklist?.companyName || "",
+    cityNeighborhood: checklist?.cityNeighborhood || "",
+    evaluatedBy: checklist?.evaluatedBy || "",
+    answers: (checklist?.answers as Record<string, ChecklistAnswer>) || {},
+  };
+
   return (
-    <BusinessAnalysisClient
+    <AnaliseNegocioTabs
       clientId={client.id}
       clientName={client.companyName}
       agencyName={agencyName}
-      initialData={initialData}
+      checklistData={checklistData}
+      businessAnalysisData={businessAnalysisData}
     />
   );
 }

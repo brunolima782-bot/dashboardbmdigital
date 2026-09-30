@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/components/providers/ToastProvider";
 import ExportPdfButton from "@/components/reports/ExportPdfButton";
 import BusinessAnalysisReport from "./BusinessAnalysisReport";
@@ -137,14 +136,8 @@ export default function BusinessAnalysisClient({
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <Link
-          href="/analise-negocio"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
+    <div className="space-y-6">
+      <div className="flex justify-end">
         {savedProfile && (
           <ExportPdfButton
             elementId="business-analysis-content"
