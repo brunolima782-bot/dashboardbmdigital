@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { X, Upload, Loader2, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -46,6 +46,25 @@ function parseNumber(value: string | undefined): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
+// Exportações reais do Google/Meta/LinkedIn Ads costumam vir com 1-2 linhas de
+// título antes do cabeçalho de verdade. Acha a linha que parece o cabeçalho
+// (contém "Campanha"/"Campaign" e tem várias colunas) e descarta o que vem antes.
+function stripPreamble(text: string): string {
+  const lines = text.split(/\r?\n/);
+  const headerIdx = lines.findIndex((line) => {
+    const lower = line.toLowerCase();
+    return (lower.includes("campanha") || lower.includes("campaign")) && line.split(",").length > 2;
+  });
+  if (headerIdx <= 0) return text;
+  return lines.slice(headerIdx).join("\n");
+}
+
+const PLATFORM_OPTIONS: { value: "META" | "GOOGLE" | "LINKEDIN"; label: string }[] = [
+  { value: "GOOGLE", label: "Google Ads" },
+  { value: "META", label: "Meta Ads" },
+  { value: "LINKEDIN", label: "LinkedIn Ads" },
+];
+
 export default function CsvImportModal({
   open,
   onClose,
@@ -59,54 +78,64 @@ export default function CsvImportModal({
 }) {
   const { showToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
   const [clientId, setClientId] = useState("");
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [fallbackDate, setFallbackDate] = useState(new Date().toISOString().slice(0, 10));
+  const [fallbackPlatform, setFallbackPlatform] = useState<"META" | "GOOGLE" | "LINKEDIN">("GOOGLE");
 
   function handleFile(file: File) {
     setFileName(file.name);
-    Papa.parse<Record<string, string>>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const parsed: ParsedRow[] = results.data.map((raw) => {
-          const dateRaw = raw["Data"] || raw["data"] || raw["Date"] || "";
-          const platformRaw = raw["Plataforma"] || raw["plataforma"] || raw["Platform"] || "";
-          const campaignRaw = raw["Campanha"] || raw["campanha"] || raw["Campaign"] || "";
-          const amountRaw = raw["Investimento"] || raw["investimento"] || raw["Amount"] || "";
-
-          const date = parseDate(dateRaw);
-          const platform = normalizePlatform(platformRaw);
-          const amount = parseNumber(amountRaw);
-
-          let error: string | undefined;
-          if (!date) error = "Data inválida (use DD/MM/AAAA)";
-          else if (!platform) error = "Plataforma inválida (Meta Ads, Google Ads ou LinkedIn Ads)";
-          else if (!campaignRaw.trim()) error = "Campanha não informada";
-          else if (amount === undefined || amount < 0) error = "Investimento inválido";
-
-          return {
-            raw,
-            valid: !error,
-            error,
-            date: date || undefined,
-            platform: platform || undefined,
-            campaignName: campaignRaw.trim(),
-            amount,
-            impressions: parseNumber(raw["Impressões"] || raw["Impressoes"]),
-            clicks: parseNumber(raw["Cliques"]),
-            leads: parseNumber(raw["Leads"]),
-            conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
-          };
-        });
-        setRows(parsed);
-      },
-      error: () => {
-        showToast("Não foi possível ler o arquivo CSV", "error");
-      },
+    file.text().then((text) => {
+      const cleaned = stripPreamble(text);
+      Papa.parse<Record<string, string>>(cleaned, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => setRawRows(results.data),
+        error: () => showToast("Não foi possível ler o arquivo CSV", "error"),
+      });
     });
   }
+
+  const rows: ParsedRow[] = useMemo(() => {
+    return rawRows
+      .map((raw) => {
+        const campaignRaw = (raw["Campanha"] || raw["campanha"] || raw["Campaign"] || "").trim();
+        // Linhas de "Total: Campanhas / Conta / ..." não têm nome de campanha real — ignora.
+        if (!campaignRaw || campaignRaw === "--" || campaignRaw === "-") return null;
+
+        const dateRaw = raw["Data"] || raw["data"] || raw["Date"] || fallbackDate;
+        const platformRaw = raw["Plataforma"] || raw["plataforma"] || raw["Platform"] || "";
+        const amountRaw =
+          raw["Investimento"] || raw["investimento"] || raw["Amount"] || raw["Custo"] || raw["custo"] || raw["Cost"] || "";
+
+        const date = parseDate(dateRaw) || parseDate(fallbackDate);
+        const platform = platformRaw ? normalizePlatform(platformRaw) : fallbackPlatform;
+        const amount = parseNumber(amountRaw);
+
+        let error: string | undefined;
+        if (!date) error = "Data inválida (use DD/MM/AAAA)";
+        else if (!platform) error = "Plataforma inválida (Meta Ads, Google Ads ou LinkedIn Ads)";
+        else if (amount === undefined || amount < 0) error = "Investimento/Custo inválido";
+
+        const row: ParsedRow = {
+          raw,
+          valid: !error,
+          error,
+          date: date || undefined,
+          platform: platform || undefined,
+          campaignName: campaignRaw,
+          amount,
+          impressions: parseNumber(raw["Impressões"] || raw["Impressoes"]),
+          clicks: parseNumber(raw["Cliques"]),
+          leads: parseNumber(raw["Leads"]),
+          conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
+        };
+        return row;
+      })
+      .filter((r): r is ParsedRow => r !== null);
+  }, [rawRows, fallbackDate, fallbackPlatform]);
 
   async function handleImport() {
     if (!clientId) {
@@ -144,7 +173,7 @@ export default function CsvImportModal({
         return;
       }
       showToast(`${data.imported} investimento(s) importado(s) com sucesso!`, "success");
-      setRows([]);
+      setRawRows([]);
       setFileName("");
       onImported();
     } catch {
@@ -155,7 +184,7 @@ export default function CsvImportModal({
   }
 
   function handleClose() {
-    setRows([]);
+    setRawRows([]);
     setFileName("");
     setClientId("");
     onClose();
@@ -190,10 +219,42 @@ export default function CsvImportModal({
             </select>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Plataforma padrão</label>
+              <select
+                className="input"
+                value={fallbackPlatform}
+                onChange={(e) => setFallbackPlatform(e.target.value as "META" | "GOOGLE" | "LINKEDIN")}
+              >
+                {PLATFORM_OPTIONS.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Data de referência</label>
+              <input
+                type="date"
+                className="input"
+                value={fallbackDate}
+                onChange={(e) => setFallbackDate(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 -mt-3">
+            Usadas apenas quando o arquivo não tem colunas próprias de Plataforma/Data (comum em exportações
+            direto do Google Ads/Meta Ads, que trazem só o total do período por campanha).
+          </p>
+
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-              Colunas esperadas: <strong>Data</strong> (DD/MM/AAAA), <strong>Plataforma</strong>, <strong>Campanha</strong>,{" "}
-              <strong>Investimento</strong>, e opcionalmente Impressões, Cliques, Leads, Conversões.
+              Aceita o export direto de <strong>Campanhas</strong> do Google Ads/Meta Ads/LinkedIn Ads (coluna{" "}
+              <strong>Custo</strong> ou <strong>Investimento</strong> + <strong>Campanha</strong>), ou uma
+              planilha própria com <strong>Data</strong> (DD/MM/AAAA), <strong>Plataforma</strong>,{" "}
+              <strong>Campanha</strong>, <strong>Investimento</strong>.
             </p>
             <button
               type="button"
