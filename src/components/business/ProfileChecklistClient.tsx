@@ -50,22 +50,22 @@ function ScoreRing({ score, color }: { score: number; color: string }) {
 }
 
 export default function ProfileChecklistClient({
-  clientId,
-  clientName,
+  prospectId,
+  prospectName,
   initialCompanyName,
   initialCityNeighborhood,
   initialEvaluatedBy,
   initialAnswers,
 }: {
-  clientId: string;
-  clientName: string;
+  prospectId: string;
+  prospectName: string;
   initialCompanyName: string;
   initialCityNeighborhood: string;
   initialEvaluatedBy: string;
   initialAnswers: Record<string, ChecklistAnswer>;
 }) {
   const { showToast } = useToast();
-  const [companyName, setCompanyName] = useState(initialCompanyName || clientName);
+  const [companyName, setCompanyName] = useState(initialCompanyName || prospectName);
   const [cityNeighborhood, setCityNeighborhood] = useState(initialCityNeighborhood);
   const [evaluatedBy, setEvaluatedBy] = useState(initialEvaluatedBy);
   const [answers, setAnswers] = useState<Record<string, ChecklistAnswer>>(initialAnswers);
@@ -87,7 +87,7 @@ export default function ProfileChecklistClient({
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
     saveTimeout.current = setTimeout(async () => {
       try {
-        await fetch(`/api/profile-checklist/${clientId}`, {
+        await fetch(`/api/profile-checklist/${prospectId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(next),
@@ -122,7 +122,7 @@ export default function ProfileChecklistClient({
   async function handleClear() {
     setClearing(true);
     try {
-      await fetch(`/api/profile-checklist/${clientId}`, { method: "DELETE" });
+      await fetch(`/api/profile-checklist/${prospectId}`, { method: "DELETE" });
       skipNextSave.current = true;
       setAnswers({});
       showToast("Avaliação limpa", "success");
@@ -136,7 +136,7 @@ export default function ProfileChecklistClient({
 
   function handleCopy() {
     const lines: string[] = [];
-    lines.push(`Avaliador de Perfil Google — ${companyName || clientName}`);
+    lines.push(`Avaliador de Perfil Google — ${companyName || prospectName}`);
     if (cityNeighborhood) lines.push(`Cidade/Bairro: ${cityNeighborhood}`);
     if (evaluatedBy) lines.push(`Avaliado por: ${evaluatedBy}`);
     lines.push(`Nota: ${result.score}/100 (${result.status})`);
@@ -342,7 +342,7 @@ export default function ProfileChecklistClient({
       <ConfirmDialog
         open={clearOpen}
         title="Limpar avaliação?"
-        description="Todas as respostas marcadas para esse cliente serão apagadas."
+        description="Todas as respostas marcadas para essa empresa serão apagadas."
         confirmLabel="Limpar"
         loading={clearing}
         onConfirm={handleClear}

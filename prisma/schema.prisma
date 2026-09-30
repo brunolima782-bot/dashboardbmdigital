@@ -92,11 +92,25 @@ model Client {
   investments     Investment[]
   budgets         Budget[]
   campaigns       Campaign[]
-  businessProfile BusinessProfile?
   revenues        AgencyRevenue[]
-  profileChecklist ProfileChecklist?
 
   @@index([status])
+}
+
+// Uma empresa que está sendo PROSPECTADA (ainda não é cliente). A Análise de
+// Negócio (checklist de perfil do Google + comparação com concorrentes) vive
+// aqui, desacoplada do cadastro de Client — analisar um prospect nunca deve
+// exigir que ele já seja cliente pago.
+model Prospect {
+  id        String   @id @default(cuid())
+  name      String
+  segment   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  businessProfile  BusinessProfile?
+  profileChecklist ProfileChecklist?
 }
 
 // Checklist de otimização do perfil do Google Meu Negócio (33 itens, pesos
@@ -105,8 +119,8 @@ model Client {
 // "NAO_TEM" | "NAO_SE_APLICA" }.
 model ProfileChecklist {
   id               String   @id @default(cuid())
-  clientId         String   @unique
-  client           Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  prospectId       String   @unique
+  prospect         Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   companyName      String?
   cityNeighborhood String?
   evaluatedBy      String?
@@ -115,12 +129,12 @@ model ProfileChecklist {
   createdAt        DateTime @default(now())
 }
 
-// Diagnóstico do perfil do Google Meu Negócio do cliente + concorrentes,
+// Diagnóstico do perfil do Google Meu Negócio do prospect + concorrentes,
 // usado para gerar a análise de pontos fortes/fracos e estratégia de tráfego.
 model BusinessProfile {
   id                String   @id @default(cuid())
-  clientId          String   @unique
-  client            Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  prospectId        String   @unique
+  prospect          Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
   businessName      String
   category          String
   isB2B             Boolean  @default(false)

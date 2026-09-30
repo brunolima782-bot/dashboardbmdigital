@@ -25,15 +25,15 @@ const profileSchema = z.object({
   competitors: z.array(competitorSchema).max(10),
 });
 
-export async function GET(_request: NextRequest, { params }: { params: { clientId: string } }) {
+export async function GET(_request: NextRequest, { params }: { params: { prospectId: string } }) {
   const profile = await prisma.businessProfile.findUnique({
-    where: { clientId: params.clientId },
+    where: { prospectId: params.prospectId },
     include: { competitors: true },
   });
   return NextResponse.json(profile);
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { clientId: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: { prospectId: string } }) {
   try {
     const body = await request.json();
     const parsed = profileSchema.safeParse(body);
@@ -41,17 +41,17 @@ export async function PUT(request: NextRequest, { params }: { params: { clientId
       return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
     }
 
-    const client = await prisma.client.findUnique({ where: { id: params.clientId } });
-    if (!client) {
-      return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+    const prospect = await prisma.prospect.findUnique({ where: { id: params.prospectId } });
+    if (!prospect) {
+      return NextResponse.json({ error: "Prospect não encontrado" }, { status: 404 });
     }
 
     const { competitors, ...profileData } = parsed.data;
 
     const profile = await prisma.$transaction(async (tx) => {
       const saved = await tx.businessProfile.upsert({
-        where: { clientId: params.clientId },
-        create: { clientId: params.clientId, ...profileData },
+        where: { prospectId: params.prospectId },
+        create: { prospectId: params.prospectId, ...profileData },
         update: profileData,
       });
 
@@ -61,6 +61,11 @@ export async function PUT(request: NextRequest, { params }: { params: { clientId
           data: competitors.map((c) => ({ ...c, businessProfileId: saved.id })),
         });
       }
+
+      await tx.prospect.update({
+        where: { id: params.prospectId },
+        data: { name: profileData.businessName, segment: profileData.category },
+      });
 
       return tx.businessProfile.findUnique({
         where: { id: saved.id },

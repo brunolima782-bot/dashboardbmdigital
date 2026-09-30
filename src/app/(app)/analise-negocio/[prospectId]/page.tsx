@@ -5,19 +5,19 @@ import type { ChecklistAnswer } from "@/lib/profileChecklist";
 
 export const dynamic = "force-dynamic";
 
-export default async function BusinessAnalysisPage({ params }: { params: { clientId: string } }) {
-  const client = await prisma.client.findUnique({ where: { id: params.clientId } });
-  if (!client) notFound();
+export default async function ProspectAnalysisPage({ params }: { params: { prospectId: string } }) {
+  const prospect = await prisma.prospect.findUnique({ where: { id: params.prospectId } });
+  if (!prospect) notFound();
 
   const settings = await prisma.agencySettings.findFirst();
   const agencyName = settings?.agencyName || "Minha Agência";
 
   const [profile, checklist] = await Promise.all([
     prisma.businessProfile.findUnique({
-      where: { clientId: params.clientId },
+      where: { prospectId: params.prospectId },
       include: { competitors: true },
     }),
-    prisma.profileChecklist.findUnique({ where: { clientId: params.clientId } }),
+    prisma.profileChecklist.findUnique({ where: { prospectId: params.prospectId } }),
   ]);
 
   const businessAnalysisData = profile
@@ -54,8 +54,8 @@ export default async function BusinessAnalysisPage({ params }: { params: { clien
 
   return (
     <AnaliseNegocioTabs
-      clientId={client.id}
-      clientName={client.companyName}
+      prospectId={prospect.id}
+      prospectName={prospect.name}
       agencyName={agencyName}
       checklistData={checklistData}
       businessAnalysisData={businessAnalysisData}

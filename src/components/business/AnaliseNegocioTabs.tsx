@@ -9,14 +9,14 @@ import type { ChecklistAnswer } from "@/lib/profileChecklist";
 import type { BusinessProfileData, CompetitorData } from "@/lib/businessAnalysis";
 
 export default function AnaliseNegocioTabs({
-  clientId,
-  clientName,
+  prospectId,
+  prospectName,
   agencyName,
   checklistData,
   businessAnalysisData,
 }: {
-  clientId: string;
-  clientName: string;
+  prospectId: string;
+  prospectName: string;
   agencyName: string;
   checklistData: {
     companyName: string;
@@ -62,8 +62,8 @@ export default function AnaliseNegocioTabs({
 
       {tab === "checklist" ? (
         <ProfileChecklistClient
-          clientId={clientId}
-          clientName={clientName}
+          prospectId={prospectId}
+          prospectName={prospectName}
           initialCompanyName={checklistData.companyName}
           initialCityNeighborhood={checklistData.cityNeighborhood}
           initialEvaluatedBy={checklistData.evaluatedBy}
@@ -71,8 +71,8 @@ export default function AnaliseNegocioTabs({
         />
       ) : (
         <BusinessAnalysisClient
-          clientId={clientId}
-          clientName={clientName}
+          prospectId={prospectId}
+          prospectName={prospectName}
           agencyName={agencyName}
           initialData={businessAnalysisData}
         />

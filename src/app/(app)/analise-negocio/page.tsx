@@ -1,13 +1,31 @@
 import { prisma } from "@/lib/prisma";
-import BusinessAnalysisSelector from "@/components/business/BusinessAnalysisSelector";
+import ProspectListClient from "@/components/business/ProspectListClient";
+import { calculateChecklistResult, ChecklistAnswer } from "@/lib/profileChecklist";
 
 export const dynamic = "force-dynamic";
 
-export default async function BusinessAnalysisIndexPage() {
-  const clients = await prisma.client.findMany({
-    orderBy: { companyName: "asc" },
-    select: { id: true, companyName: true, segment: true, businessProfile: { select: { id: true } } },
+export default async function AnaliseNegocioIndexPage() {
+  const prospects = await prisma.prospect.findMany({
+    orderBy: { updatedAt: "desc" },
+    include: {
+      businessProfile: { select: { id: true } },
+      profileChecklist: { select: { id: true, answers: true } },
+    },
   });
 
-  return <BusinessAnalysisSelector clients={clients} />;
+  const rows = prospects.map((p) => {
+    const answers = (p.profileChecklist?.answers as Record<string, ChecklistAnswer>) || {};
+    const score = p.profileChecklist ? calculateChecklistResult(answers).score : null;
+    return {
+      id: p.id,
+      name: p.name,
+      segment: p.segment,
+      updatedAt: p.updatedAt.toISOString(),
+      hasChecklist: Boolean(p.profileChecklist),
+      hasComparison: Boolean(p.businessProfile),
+      score,
+    };
+  });
+
+  return <ProspectListClient prospects={rows} />;
 }

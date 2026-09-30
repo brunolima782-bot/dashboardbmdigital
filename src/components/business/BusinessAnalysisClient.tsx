@@ -34,13 +34,13 @@ function toCompetitorFormRow(c?: CompetitorData): CompetitorFormRow {
 }
 
 export default function BusinessAnalysisClient({
-  clientId,
-  clientName,
+  prospectId,
+  prospectName,
   agencyName,
   initialData,
 }: {
-  clientId: string;
-  clientName: string;
+  prospectId: string;
+  prospectName: string;
   agencyName: string;
   initialData: SavedProfile | null;
 }) {
@@ -48,7 +48,7 @@ export default function BusinessAnalysisClient({
   const [saving, setSaving] = useState(false);
   const [savedProfile, setSavedProfile] = useState<SavedProfile | null>(initialData);
 
-  const [businessName, setBusinessName] = useState(initialData?.profile.businessName ?? clientName);
+  const [businessName, setBusinessName] = useState(initialData?.profile.businessName ?? prospectName);
   const [category, setCategory] = useState(initialData?.profile.category ?? "");
   const [isB2B, setIsB2B] = useState(initialData?.profile.isB2B ?? false);
   const [rating, setRating] = useState(
@@ -116,7 +116,7 @@ export default function BusinessAnalysisClient({
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/business-profile/${clientId}`, {
+      const res = await fetch(`/api/business-profile/${prospectId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -141,9 +141,9 @@ export default function BusinessAnalysisClient({
         {savedProfile && (
           <ExportPdfButton
             elementId="business-analysis-content"
-            fileName={`Analise-Negocio-${clientName.replace(/\s+/g, "-")}.pdf`}
+            fileName={`Analise-Negocio-${prospectName.replace(/\s+/g, "-")}.pdf`}
             agencyName={agencyName}
-            reportTitle={`Análise de Negócio · ${clientName}`}
+            reportTitle={`Análise de Negócio · ${prospectName}`}
           />
         )}
       </div>
@@ -152,7 +152,7 @@ export default function BusinessAnalysisClient({
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-white">Dados do Google Meu Negócio</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Preencha olhando o perfil público do cliente no Google. Esses dados não são buscados
+            Preencha olhando o perfil público da empresa no Google. Esses dados não são buscados
             automaticamente.
           </p>
         </div>
