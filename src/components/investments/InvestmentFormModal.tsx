@@ -41,6 +41,8 @@ export type InvestmentRecord = {
   leads?: number;
   conversions?: number;
   conversionValue?: number;
+  localActions?: number;
+  calls?: number;
   notes?: string;
 };
 
@@ -56,6 +58,8 @@ const EMPTY: InvestmentRecord = {
   leads: undefined,
   conversions: undefined,
   conversionValue: undefined,
+  localActions: undefined,
+  calls: undefined,
   notes: "",
 };
 
@@ -83,6 +87,8 @@ export default function InvestmentFormModal({
   const [clicksText, setClicksText] = useState("");
   const [leadsText, setLeadsText] = useState("");
   const [conversionsText, setConversionsText] = useState("");
+  const [localActionsText, setLocalActionsText] = useState("");
+  const [callsText, setCallsText] = useState("");
   const [saving, setSaving] = useState(false);
   const [showMetrics, setShowMetrics] = useState(false);
   const isEdit = Boolean(initialData?.id);
@@ -101,6 +107,8 @@ export default function InvestmentFormModal({
       setClicksText(formatBRInt(next.clicks));
       setLeadsText(formatBRInt(next.leads));
       setConversionsText(formatBRInt(next.conversions));
+      setLocalActionsText(formatBRInt(next.localActions));
+      setCallsText(formatBRInt(next.calls));
       setShowMetrics(Boolean(initialData));
     }
   }, [open, initialData, defaultClientId]);
@@ -322,6 +330,32 @@ export default function InvestmentFormModal({
                     update("conversionValue", e.target.value ? parseBRNumber(e.target.value) : undefined);
                   }}
                   placeholder="0,00"
+                />
+              </div>
+              <div>
+                <label className="label">Ações locais (Google)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="input"
+                  value={localActionsText}
+                  onChange={(e) => {
+                    setLocalActionsText(e.target.value);
+                    update("localActions", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
+                />
+              </div>
+              <div>
+                <label className="label">Chamadas (Google)</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="input"
+                  value={callsText}
+                  onChange={(e) => {
+                    setCallsText(e.target.value);
+                    update("calls", e.target.value ? parseBRInt(e.target.value) : undefined);
+                  }}
                 />
               </div>
             </div>

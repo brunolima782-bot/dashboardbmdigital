@@ -13,6 +13,8 @@ const investmentSchema = z.object({
   clicks: z.number().nonnegative().optional(),
   leads: z.number().nonnegative().optional(),
   conversions: z.number().nonnegative().optional(),
+  localActions: z.number().nonnegative().optional(),
+  calls: z.number().nonnegative().optional(),
   conversionValue: z.number().nonnegative().optional(),
   notes: z.string().optional(),
 });
