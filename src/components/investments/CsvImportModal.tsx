@@ -41,7 +41,13 @@ function parseDate(value: string): string | null {
 
 function parseNumber(value: string | undefined): number | undefined {
   if (!value) return undefined;
-  const cleaned = value.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+  const trimmed = value.trim();
+  // Exportações do Meta Ads usam ponto decimal (ex: 394.03); o restante usa formato brasileiro (1.234,56).
+  if (/^-?\d+\.\d{1,2}$/.test(trimmed)) {
+    const n = parseFloat(trimmed);
+    return isNaN(n) ? undefined : n;
+  }
+  const cleaned = trimmed.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "");
   const n = parseFloat(cleaned);
   return isNaN(n) ? undefined : n;
 }
@@ -101,18 +107,33 @@ export default function CsvImportModal({
   const rows: ParsedRow[] = useMemo(() => {
     return rawRows
       .map((raw) => {
-        const campaignRaw = (raw["Campanha"] || raw["campanha"] || raw["Campaign"] || "").trim();
+        const campaignRaw = (
+          raw["Campanha"] || raw["campanha"] || raw["Nome da campanha"] || raw["Campaign"] || ""
+        ).trim();
         // Linhas de "Total: Campanhas / Conta / ..." não têm nome de campanha real — ignora.
         if (!campaignRaw || campaignRaw === "--" || campaignRaw === "-") return null;
 
-        const dateRaw = raw["Data"] || raw["data"] || raw["Date"] || fallbackDate;
+        const dateRaw =
+          raw["Data"] || raw["data"] || raw["Date"] || raw["Início dos relatórios"] || fallbackDate;
         const platformRaw = raw["Plataforma"] || raw["plataforma"] || raw["Platform"] || "";
         const amountRaw =
-          raw["Investimento"] || raw["investimento"] || raw["Amount"] || raw["Custo"] || raw["custo"] || raw["Cost"] || "";
+          raw["Investimento"] ||
+          raw["investimento"] ||
+          raw["Amount"] ||
+          raw["Custo"] ||
+          raw["custo"] ||
+          raw["Cost"] ||
+          raw["Valor gasto (BRL)"] ||
+          raw["Valor gasto"] ||
+          "";
+
+        // Campanhas pausadas/sem veiculação no período não entram como investimento.
+        const spent = parseNumber(amountRaw);
+        if (spent === 0) return null;
 
         const date = parseDate(dateRaw) || parseDate(fallbackDate);
         const platform = platformRaw ? normalizePlatform(platformRaw) : fallbackPlatform;
-        const amount = parseNumber(amountRaw);
+        const amount = spent;
 
         let error: string | undefined;
         if (!date) error = "Data inválida (use DD/MM/AAAA)";
