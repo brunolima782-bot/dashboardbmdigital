@@ -150,7 +150,7 @@ export default function CsvImportModal({
           amount,
           impressions: parseNumber(raw["Impressões"] || raw["Impressoes"]),
           clicks: parseNumber(raw["Cliques"]),
-          leads: parseNumber(raw["Leads"]),
+          leads: parseNumber(raw["Leads"] || raw["Novos contatos de mensagem"] || raw["Resultados"]),
           conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
         };
         return row;
