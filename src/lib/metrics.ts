@@ -6,6 +6,8 @@ export type MetricRow = {
   leads?: number | null;
   conversions?: number | null;
   conversionValue?: number | null;
+  localActions?: number | null;
+  calls?: number | null;
 };
 
 export type AggregatedMetrics = {
@@ -16,6 +18,8 @@ export type AggregatedMetrics = {
   leads: number;
   conversions: number;
   conversionValue: number;
+  localActions: number;
+  calls: number;
   ctr: number; // %
   cpc: number; // R$
   cpm: number; // R$
@@ -34,6 +38,8 @@ export function aggregateMetrics(rows: MetricRow[]): AggregatedMetrics {
       acc.leads += r.leads || 0;
       acc.conversions += r.conversions || 0;
       acc.conversionValue += r.conversionValue || 0;
+      acc.localActions += r.localActions || 0;
+      acc.calls += r.calls || 0;
       return acc;
     },
     {
@@ -44,6 +50,8 @@ export function aggregateMetrics(rows: MetricRow[]): AggregatedMetrics {
       leads: 0,
       conversions: 0,
       conversionValue: 0,
+      localActions: 0,
+      calls: 0,
     }
   );
 

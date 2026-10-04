@@ -18,6 +18,8 @@ type ParsedRow = {
   clicks?: number;
   leads?: number;
   conversions?: number;
+  localActions?: number;
+  calls?: number;
 };
 
 function normalizePlatform(value: string): "META" | "GOOGLE" | "LINKEDIN" | null {
@@ -152,6 +154,8 @@ export default function CsvImportModal({
           clicks: parseNumber(raw["Cliques"]),
           leads: parseNumber(raw["Leads"] || raw["Novos contatos de mensagem"] || raw["Resultados"]),
           conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
+          localActions: parseNumber(raw["Ações locais"] || raw["Acoes locais"]),
+          calls: parseNumber(raw["Chamadas"]),
         };
         return row;
       })
@@ -185,6 +189,8 @@ export default function CsvImportModal({
             clicks: r.clicks,
             leads: r.leads,
             conversions: r.conversions,
+            localActions: r.localActions,
+            calls: r.calls,
           })),
         }),
       });

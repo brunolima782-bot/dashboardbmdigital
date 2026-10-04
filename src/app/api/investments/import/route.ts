@@ -12,6 +12,8 @@ const rowSchema = z.object({
   clicks: z.number().nonnegative().optional(),
   leads: z.number().nonnegative().optional(),
   conversions: z.number().nonnegative().optional(),
+  localActions: z.number().nonnegative().optional(),
+  calls: z.number().nonnegative().optional(),
 });
 
 const bodySchema = z.object({
@@ -39,6 +41,8 @@ export async function POST(request: NextRequest) {
             clicks: row.clicks ?? 0,
             leads: row.leads ?? 0,
             conversions: row.conversions ?? 0,
+            localActions: row.localActions ?? 0,
+            calls: row.calls ?? 0,
           },
         })
       )

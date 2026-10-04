@@ -13,6 +13,12 @@ export default function PlatformPerformanceCard({ platform, rows }: { platform: 
     { label: "CPC", value: formatCurrency(agg.cpc) },
     { label: "Leads", value: formatNumber(agg.leads) },
     { label: "CPL", value: formatCurrency(agg.cpl) },
+    ...(platform === "GOOGLE"
+      ? [
+          { label: "Ações locais", value: formatNumber(agg.localActions) },
+          { label: "Chamadas", value: formatNumber(agg.calls) },
+        ]
+      : []),
   ];
 
   return (
