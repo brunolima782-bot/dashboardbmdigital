@@ -41,6 +41,20 @@ function parseDate(value: string): string | null {
   return null;
 }
 
+function normalizeKey(k: string): string {
+  return k.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Busca a primeira coluna existente entre os nomes aceitos, ignorando maiúsculas e acentos.
+function pick(raw: Record<string, string>, ...names: string[]): string {
+  const map = new Map(Object.entries(raw).map(([k, v]) => [normalizeKey(k), v]));
+  for (const name of names) {
+    const v = map.get(normalizeKey(name));
+    if (v !== undefined && v.trim() !== '') return v;
+  }
+  return '';
+}
+
 function parseNumber(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const trimmed = value.trim();
@@ -109,25 +123,13 @@ export default function CsvImportModal({
   const rows: ParsedRow[] = useMemo(() => {
     return rawRows
       .map((raw) => {
-        const campaignRaw = (
-          raw["Campanha"] || raw["campanha"] || raw["Nome da campanha"] || raw["Campaign"] || ""
-        ).trim();
+        const campaignRaw = pick(raw, 'Campanha', 'Nome da campanha', 'Campaign').trim();
         // Linhas de "Total: Campanhas / Conta / ..." não têm nome de campanha real — ignora.
-        if (!campaignRaw || campaignRaw === "--" || campaignRaw === "-") return null;
+        if (!campaignRaw || campaignRaw === '--' || campaignRaw === '-') return null;
 
-        const dateRaw =
-          raw["Data"] || raw["data"] || raw["Date"] || raw["Início dos relatórios"] || fallbackDate;
-        const platformRaw = raw["Plataforma"] || raw["plataforma"] || raw["Platform"] || "";
-        const amountRaw =
-          raw["Investimento"] ||
-          raw["investimento"] ||
-          raw["Amount"] ||
-          raw["Custo"] ||
-          raw["custo"] ||
-          raw["Cost"] ||
-          raw["Valor gasto (BRL)"] ||
-          raw["Valor gasto"] ||
-          "";
+        const dateRaw = pick(raw, 'Data', 'Date', 'Início dos relatórios') || fallbackDate;
+        const platformRaw = pick(raw, 'Plataforma', 'Platform');
+        const amountRaw = pick(raw, 'Investimento', 'Amount', 'Custo', 'Cost', 'Valor gasto (BRL)', 'Valor gasto');
 
         // Campanhas pausadas/sem veiculação no período não entram como investimento.
         const spent = parseNumber(amountRaw);
@@ -138,9 +140,9 @@ export default function CsvImportModal({
         const amount = spent;
 
         let error: string | undefined;
-        if (!date) error = "Data inválida (use DD/MM/AAAA)";
-        else if (!platform) error = "Plataforma inválida (Meta Ads, Google Ads ou LinkedIn Ads)";
-        else if (amount === undefined || amount < 0) error = "Investimento/Custo inválido";
+        if (!date) error = 'Data inválida (use DD/MM/AAAA)';
+        else if (!platform) error = 'Plataforma inválida (Meta Ads, Google Ads ou LinkedIn Ads)';
+        else if (amount === undefined || amount < 0) error = 'Investimento/Custo inválido';
 
         const row: ParsedRow = {
           raw,
@@ -150,12 +152,12 @@ export default function CsvImportModal({
           platform: platform || undefined,
           campaignName: campaignRaw,
           amount,
-          impressions: parseNumber(raw["Impressões"] || raw["Impressoes"]),
-          clicks: parseNumber(raw["Cliques"]),
-          leads: parseNumber(raw["Leads"] || raw["Novos contatos de mensagem"] || raw["Resultados"]),
-          conversions: parseNumber(raw["Conversões"] || raw["Conversoes"]),
-          localActions: parseNumber(raw["Ações locais"] || raw["Acoes locais"]),
-          calls: parseNumber(raw["Chamadas"]),
+          impressions: parseNumber(pick(raw, 'Impressões', 'Impressoes')),
+          clicks: parseNumber(pick(raw, 'Cliques', 'Cliques (todos)')),
+          leads: parseNumber(pick(raw, 'Leads', 'Novos contatos de mensagem', 'Resultados')),
+          conversions: parseNumber(pick(raw, 'Conversões', 'Conversoes')),
+          localActions: parseNumber(pick(raw, 'Ações locais', 'Acoes locais')),
+          calls: parseNumber(pick(raw, 'Chamadas')),
         };
         return row;
       })
